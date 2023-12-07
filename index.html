@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>East Java Maps</title>
+    <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+  <link rel="stylesheet" href="src/main.css">
+  <link rel="stylesheet" href="src/leaflet-search.css">
+  <link rel="stylesheet" href="src/L.Control.ZoomBar.css">
+  <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+</head>
+<body>
+    <header>
+        <a href="#" class="logo"><img src="images/icon.png" width="30px" height="30px"  style="float:left;"">Map of East Java Province</a>
+        <input type="checkbox" id="menu-bar">
+        <label for="menu-bar"><img src="images/icon-menu.png"></label>
+        <nav class="navbar">
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a class="active" href="#">Regency</a></li>
+                <li><a href="#">Subdistrict</a></li>
+                <li><a href="#">About</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="content">
+        <div class="sidebar">
+            <div class="title">
+                <h2><div class="kabupaten"></div></h2>
+            </div>
+            <table>
+                <tr style="background-color:#e3e6d3;">
+                    <td><h4>Capital </h4></td>
+                    <td><div class="capital"></div></td>
+                </tr>
+                <tr style="background-color:#f1f3e8;">
+                    <td><h4>Coordinate </h4></td>
+                    <td><div class="coord"></div></td>
+                </tr>
+                <tr style="background-color:#e3e6d3;">
+                    <td><h4>Area </h4></td>
+                    <td><div class="area"></div></td>
+                </tr>
+                <tr style="background-color:#f1f3e8;">
+                    <td><h4>Population </h4></td>
+                    <td><div class="pend"></div></td>
+                </tr>
+                <tr style="background-color:#e3e6d3;">
+                    <td><h4>GDP Per Capita </h4></td>
+                    <td><div class="gdp"></div></td>
+                </tr>
+            </table>
+            <div id="insetMap" class="inset-map"></div>
+            <div class="information">
+                <p>&copy; Mohammad Rizal Ardiansyah | Made with Leaflet Js and JQuery</p>
+                <p>Data: BPS Provinsi Jawa Timur 2020, Badan Informasi Geospasial (BIG),</p>
+                <p>& Open Street Map as a base map</p>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+</body>
+<script src="data/kabupaten_jawa_timur.js"></script>
+<script src="data/jawa_timur.js"></script>
+<script src="src/leaflet-search.js"></script>
+<script src="src/L.Control.ZoomBar.js"></script>
+<script>    
+    var map = L.map("map", {
+    center: [-7.779795, 113.575251],
+    zoom: 8,
+    zoomControl: false
+    });
+
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    var geojson = L.geoJSON(data, {
+    onEachFeature: onEachFeature, style: function (geoJsonFeature) {
+            return {color: '#76818c', fillColor: '#a3d5d2', opacity: 1, fillOpacity: 1, weight: 1}
+        }
+    }).addTo(map);
+
+    function onEachFeature(feature, layer) {
+        layer.on('mouseover', function () {
+            this.setStyle({
+                'fillColor': '#0000ff'
+            });
+        });
+        layer.on('mouseout', function(e) {
+            geojson.eachLayer(function(layer) {	//restore feature color
+                geojson.resetStyle(layer);
+            });	
+        });
+        layer.on('click', function(e) {
+            $(".kabupaten").html(feature.properties.Kabupaten);
+            $(".capital").html(feature.properties.Ibukota);
+            $(".coord").html(feature.properties.Koordinat);
+            $(".area").html(feature.properties.Luas + " Km" + "<sup>2</sup>");
+            $(".pend").html(feature.properties.Penduduk);
+            $(".gdp").html("IDR" + feature.properties.GDP);
+        });
+    }
+
+    var insetMap = L.map("insetMap", {
+    center: [-3.084553, 119.733078],
+    zoom: 3,
+    zoomControl: false
+    });
+
+    var OpenStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(insetMap);
+
+    var geojson1 = L.geoJSON(inset, {
+        style: function (geoJsonFeature) {
+            return {color: 'red', fillColor: 'red', opacity: 1, fillOpacity: 1}
+        }
+    }).addTo(insetMap);
+
+    var zoom_bar = new L.Control.ZoomBar({position: 'topleft'}).addTo(map);
+
+    var searchControl = new L.Control.Search({
+		layer: geojson,
+		propertyName: 'Kabupaten',
+		marker: false,
+		moveToLocation: function(latlng, title, map) {
+			//map.fitBounds( latlng.layer.getBounds() );
+			var zoom = map.getBoundsZoom(latlng.layer.getBounds());
+  			map.setView(latlng, zoom); // access the zoom
+		}
+	});
+
+	searchControl.on('search:locationfound', function(e) {
+		
+		//console.log('search:locationfound', );
+
+		//map.removeLayer(this._markerSearch)
+
+		e.layer.setStyle({fillColor: '#00aea8', color: '#00aea8'});
+		if(e.layer._popup)
+			e.layer.openPopup();
+
+	}).on('search:collapsed', function(e) {
+
+		geojson.eachLayer(function(layer) {	//restore feature color
+			geojson.resetStyle(layer);
+		});	
+	});
+	
+	map.addControl( searchControl );  //inizialize search control
+</script>
+</html>
